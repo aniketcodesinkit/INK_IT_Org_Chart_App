@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>INK IT Organization Chart</title>
+
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+    <script src="https://d3js.org/d3.v7.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.9.3/html2pdf.bundle.min.js"></script>
+
+    <style>
+        body {
+            background-color: #080710;
+            overflow: hidden;
+            color: white;
+            font-family: Arial, sans-serif;
+        }
+
+        .node foreignObject {
+            overflow: visible;
+        }
+
+        .card {
+            width: 180px;
+            height: 220px;
+            border-radius: 10px;
+            background-color: rgba(255, 255, 255, 0.15);
+            border: 2px solid rgba(255, 255, 255, 0.2);
+            border-color: #2e9a9a;
+            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
+            text-align: center;
+            padding: 15px;
+            backdrop-filter: blur(10px);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            color: white;
+            transition: transform 0.2s ease;
+        }
+
+        .card:hover {
+            transform: scale(1.05);
+            background-color: rgba(46, 154, 154, 0.25);
+        }
+
+        .card img {
+            border-radius: 50%;
+            width: 70px;
+            height: 70px;
+            object-fit: cover;
+            margin-bottom: 10px;
+            border: 3px solid #2e9a9a;
+        }
+
+        .card h5 {
+            font-size: 16px;
+            margin: 8px 0 4px;
+        }
+
+        .card p {
+            margin: 4px 0;
+            font-size: 12px;
+            color: #e0e0e0;
+        }
+
+        .chart-container {
+            display: flex;
+            justify-content: center;
+            padding: 20px;
+            border: 2px solid rgba(255, 255, 255, 0.2);
+            border-radius: 10px;
+            margin: 20px;
+        }
+
+        h1 {
+            text-align: center;
+            font-size: 24px;
+            color: #ffffff;
+            margin-top: 20px;
+        }
+
+        .navbar {
+            background-color: rgba(255, 255, 255, 0.1);
+            padding: 15px;
+            box-shadow: 0 0 15px rgba(8, 7, 16, 0.6);
+        }
+
+        .navbar-brand, .username-display {
+            color: #2e9a9a !important;
+            font-weight: 500;
+            font-size: 18px;
+            display: inline-block;
+        }
+
+        
+
+        .navbar-brand:hover, .navbar-nav .nav-link:hover {
+            color: #ffffff !important;
+        }
+
+        .navbar .username-display {
+            color: #ffffff;
+            margin-left: 15px;
+        }
+        
+        .logout-btn {
+            background-color: #2e9a9a;
+            color: #ffffff;
+            border: none;
+            padding: 8px 15px;
+            border-radius: 5px;
+            transition: background-color 0.3s ease;
+        }
+
+        .btn.logout-btn:hover {
+            background-color: #ffffff;
+            color: #2e9a9a;
+        }
+        .share-button {
+            background-color: #2e9a9a;
+            color: #fff;
+            border: none;
+            padding: 8px 15px;
+            border-radius: 5px;
+            transition: background-color 0.3s ease;
+        }
+        .share-button:hover {
+            background-color: #ffffff;
+            color: #2e9a9a;
+        }
+
+    </style>
+</head>
+<body>
+
+    <nav class="navbar navbar-expand-lg">
+        <div class="container-fluid">
+            <a class="navbar-brand" href="{% url 'index' %}">Org Chart App</a>
+            <div class="collapse navbar-collapse justify-content-end">
+                <ul class="navbar-nav">
+                    {% if user.is_authenticated %}
+                        <li class="nav-item">
+                            {% comment %} <span class="username-display">Welcome, {{ user.username }}</span> {% endcomment %}
+                        </li>
+                        <li class="nav-item">
+                            <button onclick="copyShareLink()" class="share-button">Share Link</button>
+                        </li>
+                        <li class="nav-item ms-3">
+                            <a href="{% url 'logout' %}" class="btn logout-btn">Logout</a>
+                        </li>
+                    {% else %}
+                        <li class="nav-item">
+                            <a href="{% url 'login' %}" class="nav-link">Login</a>
+                        </li>
+                        <li class="nav-item">
+                            <a href="{% url 'register' %}" class="nav-link">Register</a>
+                        </li>
+                    {% endif %}
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <h1>INK IT Organization Chart</h1>
+
+    <div id="chart" class="chart-container"></div>
+
+    <script>
+        // JSON data passed from Django
+        const data = {{ data|safe }};
+
+        // Set up dimensions and margins of the diagram
+        const margin = { top: 20, right: 90, bottom: 30, left: 90 };
+        const width = window.innerWidth - margin.left - margin.right;
+        const height = window.innerHeight - margin.top - margin.bottom;
+
+        // SVG canvas with a scalable viewBox
+        const svg = d3.select("#chart").append("svg")
+            .attr("width", "100%")
+            .attr("height", "100vh")
+            .attr("viewBox", `0 0 ${width + 200} ${height + 200}`)
+            .attr("preserveAspectRatio", "xMidYMid meet")
+            .call(d3.zoom().on("zoom", (event) => {
+                svg.attr("transform", event.transform);
+            }))
+            .append("g")
+            .attr("transform", `translate(${margin.left},${margin.top})`);
+
+        // Convert data into a D3 hierarchy
+        const root = d3.hierarchy(data[0]);
+
+        // Create a tree layout with node spacing
+        const treeLayout = d3.tree().nodeSize([300, 300]);
+        treeLayout(root);
+
+        // Add links between nodes with clean styling
+        svg.selectAll(".link")
+            .data(root.links())
+            .enter().append("path")
+            .attr("class", "link")
+            .attr("d", d3.linkVertical()
+                .x(d => d.x)
+                .y(d => d.y))
+            .attr("stroke", "#ccc")
+            .attr("stroke-width", 2)
+            .attr("fill", "none");  
+
+        // Add nodes as groups
+        const node = svg.selectAll(".node")
+            .data(root.descendants())
+            .enter().append("g")
+            .attr("class", "node")
+            .attr("transform", d => `translate(${d.x},${d.y})`);
+
+        // employee cards
+        node.append("foreignObject")
+            .attr("width", 180)
+            .attr("height", 220)
+            .attr("x", -90)
+            .attr("y", 10)
+            .append("xhtml:div")
+            .attr("class", "card")
+            .html(d => `
+                <img src="${d.data.image}" alt="${d.data.name}">
+                <h5>${d.data.name}</h5>
+                <p>${d.data.title}</p>
+                <p>${d.data.office_location}</p>
+                <p>${d.data.employment_type}</p>
+            `);
+
+            function copyShareLink() {
+                // Define the shareable link for the org chart
+                const link = `${window.location.origin}/public/org_chart/`;
+                
+                // Copy the link to the clipboard
+                navigator.clipboard.writeText(link).then(() => {
+                    alert('Shareable link copied to clipboard!');
+                }).catch(err => {
+                    console.error('Could not copy text: ', err);
+                });
+            }
+
+    </script>
+</body>
+</html>

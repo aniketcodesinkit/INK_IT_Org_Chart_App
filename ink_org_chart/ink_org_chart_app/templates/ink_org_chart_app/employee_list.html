@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Employee List - Org Chart App</title>
+
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+
+    <!-- Load static template tag library -->
+    {% load static %}
+
+    <!-- Custom Styles -->
+    <style>
+        body {
+            background-color: #080710;
+            color: #ffffff;
+            font-family: 'Poppins', sans-serif;
+        }
+
+        .header {
+            text-align: center; /* Centers the entire header content */
+            margin-bottom: 20px; /* Add space below the header */
+        }
+    
+
+        .container {
+            margin: 40px auto;
+            max-width: 1000px;
+            width: 100%;
+            padding: 40px;
+            background-color: rgba(255, 255, 255, 0.1);
+            border-radius: 15px;
+            backdrop-filter: blur(10px);
+            box-shadow: 0 0 40px rgba(8, 7, 16, 0.6);
+        }
+
+        h2 {
+            font-size: 32px;
+            margin-bottom: 40px;
+            text-align: center;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+            background-color: white;
+            color: #080710;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        th, td {
+            padding: 8px 12px; /* Reduced padding to make table more compact */
+            border: 1px solid #dddddd;
+            text-align: left;
+            vertical-align: middle; /* Center text vertically */
+        }
+
+        th {
+            background-color: #2e9a9a;
+            color: white;
+            text-align: center;
+        }
+
+        tr:nth-child(even) {
+            background-color: #f9f9f9;
+        }
+
+        /* Image column */
+        .employee-img {
+            width: 50px; /* Set image size */
+            height: 50px;
+            border-radius: 50%;
+            object-fit: cover; /* Ensure image fits in the box without distortion */
+        }
+
+        /* Align Edit and Delete buttons */
+        .btn-group-inline {
+            display: flex;
+            justify-content: flex-start;
+            gap: 10px;
+        }
+
+        .btn-group {
+            display: flex;
+            justify-content: center; /* Center the buttons horizontally */
+            gap: 20px; /* Add space between the buttons */
+            margin-top: 20px; /* Add space at the top */
+        }
+    
+
+        .btn-custom {
+            background-color: #2e9a9a;
+            color: #fff;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            font-size: 16px;
+            text-decoration: none;
+            transition: background-color 0.3s ease;
+        }
+
+        .btn-custom:hover {
+            background-color: #ffffff;
+            color: #2e9a9a;
+        }
+
+        /* Ensure footer and buttons stay visible */
+        .footer {
+            margin-top: 40px;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <h2>Employee List</h2>
+        <div class="header">
+            <div class="btn-group">
+                <a href="{% url 'add_employee' %}" class="btn btn-custom">Add New Employee</a>
+                <a href="{% url 'org_chart' %}" class="btn btn-custom">View Org Chart</a>
+            </div>
+        </div>
+
+        <table>
+            <thead>
+                <tr>
+                    <th>Image</th> <!-- Image column -->
+                    <th>Name</th>
+                    <th>Designation</th>
+                    <th>Manager</th>
+                    <th>Office Location</th>
+                    <th>Employment Type</th>
+                    <th>Actions</th> <!-- Action buttons for Edit/Delete -->
+                </tr>
+            </thead>
+            <tbody>
+                {% for employee in employees %}
+                <tr>
+                    <td>
+                        {% if employee.image %}
+                            <img src="{{ employee.image.url }}" alt="Employee Image" class="employee-img">
+                        {% else %}
+                            <img src="{% static 'images/placeholder.png' %}" alt="No Image" class="employee-img">
+                        {% endif %}
+                    </td>
+                    <td>{{ employee.name }}</td>
+                    <td>{{ employee.title }}</td>
+                    <td>
+                        {% if employee.manager %}
+                            {{ employee.manager.name }}
+                        {% else %}
+                            None
+                        {% endif %}
+                    </td>
+                    <td>{{ employee.office_location }}</td>
+                    <td>{{ employee.employment_type }}</td>
+                    <td>
+                        <div class="btn-group-inline">
+                            <a href="{% url 'edit_employee' employee.id %}" class="btn btn-custom">Edit</a>
+                            <a href="{% url 'delete_employee' employee.id %}" class="btn btn-custom">Delete</a>
+                        </div>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+
+        
+    </div>
+
+</body>
+</html>
