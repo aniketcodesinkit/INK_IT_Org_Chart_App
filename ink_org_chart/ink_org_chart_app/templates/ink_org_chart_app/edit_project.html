@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Edit Project - Org Chart App</title>
+
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+
+    <!-- Custom Styles -->
+    <style>
+        body {
+            background-color: #080710;
+            color: #ffffff;
+            font-family: 'Poppins', sans-serif;
+            overflow-y: auto;
+        }
+
+        .container-wrapper {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 600px;
+            width: 100%;
+            background-color: rgba(255, 255, 255, 0.1);
+            padding: 40px;
+            border-radius: 15px;
+            backdrop-filter: blur(10px);
+            box-shadow: 0 0 40px rgba(8, 7, 16, 0.6);
+            text-align: center;
+        }
+
+        h1 {
+            font-size: 32px;
+            margin-bottom: 40px;
+            color: #2e9a9a;
+            text-align: center;
+        }
+
+        label {
+            float: left;
+            font-size: 14px;
+            margin-bottom: 5px;
+        }
+
+        .form-group {
+            width: 100%;
+            display: block;
+        }
+
+        .form-control {
+            background-color: rgba(255, 255, 255, 0.2);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            color: white;
+            padding: 10px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            width: 100%;
+        }
+
+        .checkbox-container {
+            background-color: rgba(255, 255, 255, 0.2);
+            border-radius: 10px;
+            padding: 10px;
+            margin-bottom: 20px;
+            max-height: 200px;
+            overflow-y: auto;
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 10px;
+            width: 100%;
+        }
+
+        .checkbox-container label {
+            display: flex;
+            align-items: center;
+            background-color: rgba(255, 255, 255, 0.1);
+            padding: 8px;
+            border-radius: 5px;
+        }
+        
+        .checkbox-container input[type="checkbox"] {
+            margin-right: 10px;
+            accent-color: #2e9a9a;
+        }
+
+        .btn-custom {
+            background-color: #2e9a9a;
+            color: #fff;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            font-size: 16px;
+            width: 100%;
+            transition: background-color 0.3s ease;
+        }
+
+        .btn-custom:hover {
+            background-color: #ffffff;
+            color: #2e9a9a;
+        }
+
+        .btn-danger {
+            background-color: #d9534f;
+            color: white;
+        }
+
+        .btn-danger:hover {
+            background-color: #c9302c;
+            color: white;
+        }
+
+        .btn-group {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 20px;
+        }
+
+    </style>
+</head>
+<body>
+    <div class="container-wrapper">
+        <div class="container">
+            <h1>Edit Project</h1>
+            <form method="POST">
+                {% csrf_token %}
+                <div class="form-group">
+                    <label for="name">Project Name</label>
+                    <input type="text" id="name" name="name" class="form-control" value="{{ project.name }}" required>
+                </div>
+                <div class="form-group">
+                    <label for="description">Project Description</label>
+                    <textarea id="description" name="description" class="form-control" rows="4">{{ project.description }}</textarea>
+                </div>
+                <div class="form-group">
+                    <label>Assign Employees</label>
+                    <div class="checkbox-container">
+                        {% for employee in all_employees %}
+                            <label>
+                                <input type="checkbox" name="employees" value="{{ employee.id }}"
+                                    {% if employee in assigned_employees %}checked{% endif %}>
+                                {{ employee.name }}
+                            </label>
+                        {% endfor %}
+                    </div>
+                </div>
+                <div class="btn-group text-center">
+                    <button type="submit" class="btn btn-custom">Update Project</button>
+                </div>
+            </form>
+            <form method="POST" action="{% url 'delete_project' project.id %}" style="margin-top: 20px;">
+                {% csrf_token %}
+                <button type="submit" class="btn btn-danger">Delete Project</button>
+            </form>
+        </div>
+    </div>
+</body>
+</html>

@@ -14,18 +14,22 @@
             background-color: #080710;
             color: #ffffff;
             font-family: 'Poppins', sans-serif;
+            overflow-y: auto;
+        }
+
+        .container-wrapper {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            padding: 20px;
         }
 
         .container {
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            text-align: center;
             max-width: 600px;
             width: 100%;
-            padding: 40px;
             background-color: rgba(255, 255, 255, 0.1);
+            padding: 40px;
             border-radius: 15px;
             backdrop-filter: blur(10px);
             box-shadow: 0 0 40px rgba(8, 7, 16, 0.6);
@@ -35,10 +39,7 @@
             font-size: 32px;
             margin-bottom: 40px;
             color: #2e9a9a;
-        }
-
-        form {
-            width: 100%;
+            text-align: center;
         }
 
         label {
@@ -73,83 +74,134 @@
             color: #2e9a9a;
         }
 
+        .btn-sm-custom {
+            background-color: #2e9a9a;
+            color: #fff;
+            border: none;
+            padding: 5px 10px;
+            font-size: 14px;
+            border-radius: 5px;
+        }
+
+        .btn-sm-custom:hover {
+            background-color: #ffffff;
+            color: #2e9a9a;
+        }
+
         .btn-group {
+            display: flex;
+            justify-content: center;
             margin-top: 20px;
         }
 
-        .btn-secondary-custom {
-            background-color: #ffffff;
-            color: #2e9a9a;
-            border: 2px solid #2e9a9a;
-            padding: 10px 20px;
-            border-radius: 5px;
-            font-size: 16px;
-            width: 100%;
-            transition: background-color 0.3s ease;
-        }
-
-        .btn-secondary-custom:hover {
-            background-color: #2e9a9a;
-            color: #ffffff;
+        #add-certification {
+            display: inline-block;
+            margin-top: 5px;
         }
     </style>
 </head>
 <body>
+    <div class="container-wrapper">
+        <div class="container">
+            <h1>Edit Employee</h1>
 
-    <div class="container">
-        <h1>Edit Employee</h1>
+            <form method="POST" enctype="multipart/form-data">
+                {% csrf_token %}
 
-        <form method="POST" enctype="multipart/form-data">
-            {% csrf_token %}
+                <div class="form-group">
+                    <label for="employee_id">Employee ID</label>
+                    <input type="text" name="employee_id" id="employee_id" class="form-control" value="{{ employee.employee_id }}" >
+                </div>
 
-            <div class="form-group">
-                <label for="name">Name</label>
-                <input type="text" name="name" id="name" class="form-control" value="{{ employee.name }}" required>
-            </div>
+                <div class="form-group">
+                    <label for="name">Name</label>
+                    <input type="text" name="name" id="name" class="form-control" value="{{ employee.name }}" required>
+                </div>
 
-            <div class="form-group">
-                <label for="title">Title/Position</label>
-                <input type="text" name="title" id="title" class="form-control" value="{{ employee.title }}" required>
-            </div>
+                <div class="form-group">
+                    <label for="title">Title/Position</label>
+                    <input type="text" name="title" id="title" class="form-control" value="{{ employee.title }}" required>
+                </div>
 
-            <div class="form-group">
-                <label for="manager">Manager</label>
-                <select name="manager" id="manager" class="form-control">
-                    <option value="">No Manager</option>
-                    {% for emp in employees %}
-                        <option value="{{ emp.id }}" {% if emp.id == employee.manager.id %}selected{% endif %}>{{ emp.name }}</option>
+                <div class="form-group">
+                    <label for="manager">Manager</label>
+                    <select name="manager" id="manager" class="form-control">
+                        <option value="">No Manager</option>
+                        {% for emp in employees %}
+                            <option value="{{ emp.id }}" {% if emp.id == employee.manager.id %}selected{% endif %}>{{ emp.name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label for="office_location">Office Location</label>
+                    <input type="text" name="office_location" id="office_location" class="form-control" value="{{ employee.office_location }}" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="employment_type">Employment Type</label>
+                    <select name="employment_type" id="employment_type" class="form-control" required>
+                        <option value="Full-time" {% if employee.employment_type == 'Full-time' %}selected{% endif %}>Full-time</option>
+                        <option value="Part-time" {% if employee.employment_type == 'Part-time' %}selected{% endif %}>Part-time</option>
+                        <option value="Contract" {% if employee.employment_type == 'Contract' %}selected{% endif %}>Contract</option>
+                        <option value="Intern" {% if employee.employment_type == 'Intern' %}selected{% endif %}>Intern</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label for="image">Choose Image</label>
+                    <input type="file" name="image" accept="image/*" class="form-control">
+                </div>
+
+                <div class="form-group">
+                    <label for="resume">Upload Resume</label>
+                    <input type="file" name="resume" accept=".pdf,.doc,.docx" class="form-control">
+                </div>
+
+                <div class="form-group">
+                    <label for="date_of_joining">Date of Joining</label>
+                    <input type="date" name="date_of_joining" id="date_of_joining" class="form-control" value="{{ employee.date_of_joining|date:'Y-m-d' }}" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="department">Department</label>
+                    <input type="text" name="department" id="department" class="form-control" value="{{ employee.department }}" >
+                </div>
+
+                <div class="form-group">
+                    <label for="job_description">Job Description</label>
+                    <textarea name="job_description" id="job_description" class="form-control" rows="3">{{ employee.job_description }}</textarea>
+                </div>
+
+                <label for="certifications">Certifications</label>
+                <div id="certifications-container">
+                    {% for cert in employee.certifications.all %}
+                        <input type="text" name="certifications[]" class="form-control mb-2" value="{{ cert.name }}">
                     {% endfor %}
-                </select>
-            </div>
+                </div>
+                <div class="mt-2">
+                    <button type="button" id="add-certification" class="btn btn-sm btn-secondary">Add More</button>
+                </div>
 
-            <div class="form-group">
-                <label for="office_location">Office Location</label>
-                <input type="text" name="office_location" id="office_location" class="form-control" value="{{ employee.office_location }}" required>
-            </div>
+                <script>
+                    document.getElementById('add-certification').addEventListener('click', function () {
+                        const container = document.getElementById('certifications-container');
+                        const input = document.createElement('input');
+                        input.type = 'text';
+                        input.name = 'certifications[]';
+                        input.classList.add('form-control', 'mb-2');
+                        container.appendChild(input);
+                    });
+                </script>
 
-            <div class="form-group">
-                <label for="employment_type">Employment Type</label>
-                <select name="employment_type" id="employment_type" class="form-control" required>
-                    <option value="Full-time" {% if employee.employment_type == 'Full-time' %}selected{% endif %}>Full-time</option>
-                    <option value="Part-time" {% if employee.employment_type == 'Part-time' %}selected{% endif %}>Part-time</option>
-                    <option value="Contract" {% if employee.employment_type == 'Contract' %}selected{% endif %}>Contract</option>
-                    <option value="Intern" {% if employee.employment_type == 'Intern' %}selected{% endif %}>Intern</option>
-                </select>
-            </div>
-
-            <div class="form-group">
-                <label for="image">Profile Image</label>
-                <input type="file" name="image" id="image" class="form-control">
-            </div>
-
-            <div class="btn-group">
-                <button type="submit" class="btn btn-custom">Save Changes</button>
-            </div>
-            <div class="btn-group">
-                <a href="{% url 'employee_list' %}" class="btn btn-secondary-custom">Cancel</a>
-            </div>
-        </form>
+                <div class="btn-group">
+                    <button type="submit" class="btn btn-custom">Save Changes</button>
+                </div>
+                <div class="btn-group">
+                    <a href="{% url 'employee_list' %}" class="btn btn-secondary-custom">Cancel</a>
+                </div>
+            </form>
+        </div>
     </div>
-
 </body>
 </html>

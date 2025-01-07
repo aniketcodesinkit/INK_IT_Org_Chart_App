@@ -21,3 +21,4 @@ class AddEmployeeSerializer(serializers.ModelSerializer):
     class Meta:
         model = Employee
         fields = ['name', 'title', 'manager', 'office_location', 'employment_type', 'image']  # Define the fields you want as parameters
+

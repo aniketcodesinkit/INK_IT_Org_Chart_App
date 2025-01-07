@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Projects - Org Chart App</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        /* General Body Styling */
+        body {
+            background-color: #080710;
+            color: #ffffff;
+            font-family: 'Poppins', sans-serif;
+            overflow-y: auto;
+        }
+
+        .container-wrapper {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 900px;
+            width: 100%;
+            background-color: rgba(255, 255, 255, 0.1);
+            padding: 40px;
+            border-radius: 15px;
+            backdrop-filter: blur(10px);
+            box-shadow: 0 0 40px rgba(8, 7, 16, 0.6);
+            text-align: center;
+        }
+
+        /* Header Styling */
+        h1 {
+            text-align: center;
+            margin: 30px 0;
+            color: #2e9a9a;
+            font-weight: 600;
+            letter-spacing: 1px;
+        }
+
+        /* Search Box Styling */
+        .search-box {
+            margin: 20px auto;
+            max-width: 400px;
+        }
+
+        .search-box input {
+            border: none;
+            border-radius: 25px;
+            padding: 12px 20px;
+            background-color: rgba(255, 255, 255, 0.1);
+            color: #ffffff;
+            transition: box-shadow 0.3s ease;
+        }
+
+        .search-box input::placeholder {
+            color: #aaaaaa;
+        }
+
+        .search-box input:focus {
+            outline: none;
+            box-shadow: 0 0 8px rgba(46, 154, 154, 0.7);
+        }
+
+        /* Project Cards Container */
+        .project-cards {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+            padding: 20px;
+        }
+
+        /* Individual Project Card */
+        .project-card {
+            background-color: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 10px;
+            padding: 20px;
+            text-align: center;
+            cursor: pointer;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        .project-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 4px 15px rgba(46, 154, 154, 0.3);
+        }
+
+        .project-card h3 {
+            color: #2e9a9a;
+            margin-bottom: 10px;
+            font-size: 1.5rem;
+        }
+
+        .project-card p {
+            font-size: 0.95rem;
+            color: #cccccc;
+        }
+
+
+    </style>
+</head>
+<body>
+
+
+
+    <div class="container">
+        <!-- Header -->
+        <h1>Projects</h1>
+
+        <!-- Search Box -->
+        <div class="search-box">
+            <input type="text" id="search" class="form-control" placeholder="Search Projects">
+        </div>
+
+        <!-- Project Cards -->
+        <div class="project-cards" id="project-cards">
+            {% for project in projects %}
+            <div class="project-card" onclick="window.location.href='/project_detail/{{ project.id }}/'">
+                <h3>{{ project.name }}</h3>
+                <p>{{ project.description|truncatewords:10 }}</p>
+            </div>
+            {% empty %}
+            <div class="text-center">
+                <p>No projects available.</p>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+
+    <!-- JavaScript for Search Functionality -->
+    <script>
+        document.getElementById('search').addEventListener('input', function() {
+            const query = this.value.toLowerCase();
+            const cards = document.querySelectorAll('.project-card');
+
+            cards.forEach(card => {
+                const name = card.querySelector('h3').innerText.toLowerCase();
+                if (name.includes(query)) {
+                    card.style.display = 'block';
+                } else {
+                    card.style.display = 'none';
+                }
+            });
+        });
+    </script>
+</body>
+</html>
