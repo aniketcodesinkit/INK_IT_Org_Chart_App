@@ -1,0 +1,134 @@
+
+body {
+    background-color: #ffffff;
+    overflow: hidden;
+    color: black;
+    font-family: Arial, sans-serif;
+}
+
+.node foreignObject {
+    overflow: visible;
+}
+
+h1 {
+    text-align: center;
+    font-size: 30px !important;
+    color: rgb(0, 0, 0);
+    margin-top: 15px !important;
+}
+
+
+.card {
+    width: 260px !important;
+    height: 220px !important;
+    border-radius: 10px;
+    background-color: rgba(208, 208, 208, 0.5) !important;
+    border : 3px solid#2e9a9a !important;
+    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2) ;
+    text-align: center;
+    padding: 15px !important;
+    backdrop-filter: blur(20px);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+   
+    transition: transform 0.2s ease;
+
+}
+
+.card:hover {
+    transform: scale(1.5);
+    background-color: rgba(46, 154, 154, 0.25) !important;
+}
+
+.card img {
+    border-radius: 50%;
+    width: 70px;
+    height: 70px;
+    object-fit: cover;
+    margin-bottom: 10px;
+    border: 3px solid #2e9a9a;
+}
+
+.card h5 {
+    font-size: 25px;
+    margin: 8px 0 4px;
+}
+
+.card p {
+    margin: 4px 0;
+    font-size: 20px;
+    color: 444444;
+}
+
+.chart-container {
+    display: flex;
+    justify-content: center;
+    padding: 20px;
+    background-color: #ffffff; /* Org chart background */
+    border: 2px solid rgba(255, 255, 255, 0.2);
+    border-radius: 10px;
+    margin: 20px;
+}
+
+
+.navbar {
+    background-color:  rgba(255, 255, 255, 0.1);
+    padding: 15px;
+    box-shadow: 0 0 15px rgba(8, 7, 16, 0.6);
+}
+
+.navbar-brand, .username-display {
+    color: #2e9a9a !important;
+    font-weight: 500;
+    font-size: 18px;
+    display: inline-block;
+}
+
+
+
+.navbar-brand:hover, .navbar-nav .nav-link:hover {
+    color: #ffffff !important;
+}
+
+.navbar .username-display {
+    color: #ffffff;
+    margin-left: 15px;
+}
+
+.logout-btn {
+    background-color: #2e9a9a;
+    color: #ffffff;
+    border: none;
+    padding: 8px 15px;
+    border-radius: 5px;
+    transition: background-color 0.3s ease;
+}
+
+.btn.logout-btn:hover {
+    background-color: #ffffff;
+    color: #2e9a9a;
+}
+.share-button {
+    background-color: #2e9a9a;
+    color: #fff;
+    border: none;
+    padding: 8px 15px;
+    border-radius: 5px;
+    transition: background-color 0.3s ease;
+}
+.share-button:hover {
+    background-color: #ffffff;
+    color: #2e9a9a;
+}
+
+/* #chart svg {
+    border: 2px solid #2e9a9a; 
+    border-radius: 8px;       
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2); 
+}   */
+
+.pipe-line {
+    stroke: black;
+    stroke-width: 10; /* Thickness of the pipe */
+}
