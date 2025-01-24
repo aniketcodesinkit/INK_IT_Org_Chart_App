@@ -75,12 +75,10 @@ const margin = { top: 20, right: 90, bottom: 30, left: 90 };
 const width = window.innerWidth - margin.left - margin.right;
 const height = window.innerHeight - margin.top - margin.bottom;
 
-// Function to render the org chart
 function renderOrgChart(data) {
     // Clear the chart container
     d3.select("#chart").select("svg").remove();
-    
-   
+
     // SVG canvas with a scalable viewBox
     const svg = d3.select("#chart").append("svg")
         .attr("width", "100%")
@@ -91,64 +89,71 @@ function renderOrgChart(data) {
             svg.attr("transform", event.transform);
         }))
         .append("g")
-        .attr("transform", `translate(${margin.left},${margin.top}) scale(0.5)`) // Initial zoom-out and center
+        .attr("transform", `translate(${margin.left},${margin.top}) scale(0.5)`);
 
-    // Convert data into a D3 hierarchy
-    const root = d3.hierarchy(data[0]);
+    // Recursive function to process data for D3 hierarchy
+    function processHierarchy(node) {
+        const children = node.children || [];
+        return {
+            ...node,
+            children: children.map(processHierarchy)
+        };
+    }
 
-    // Create a tree layout with node spacing
-    const treeLayout = d3.tree().nodeSize([400, 400]);
-    treeLayout(root);
+    const processedData = data.map(processHierarchy);
 
-    // links between nodes 
-    svg.selectAll(".link")
-        .data(root.links())
-        .enter().append("path")
-        .attr("class", "link")
-        .attr("d", d3.linkVertical()
-            .x(d => d.x)
-            .y(d => d.y))
-        .attr("stroke", "#ccc")
-        .attr("stroke-width", 2)
-        .attr("fill", "none");
+    // Render each tree independently to account for multiple hierarchies
+    processedData.forEach(treeData => {
+        const root = d3.hierarchy(treeData);
 
-    // Add nodes as groups
-    const node = svg.selectAll(".node")
-        .data(root.descendants())
-        .enter().append("g")
-        .attr("class", "node")
-        .attr("transform", d => `translate(${d.x},${d.y})`);
+        // Create a tree layout with node spacing
+        const treeLayout = d3.tree().nodeSize([600, 400]);
+        treeLayout(root);
 
-    // Add employee cards
-    node.append("foreignObject")
-        {% comment %} .attr("width", 180) {% endcomment %}
-        {% comment %} .attr("height", 240) {% endcomment %}
-        .attr("x", -90)
-        .attr("y", 10)
-        
-        .append("xhtml:div")
-        {% comment %} .attr("class", "card") {% endcomment %}
-       
-        .html(d => `
-            <div class="card" onclick="redirectToEmployeeDetail(${d.data.id})">
-                <img src="${d.data.image}" alt="${d.data.name}" >
-                <h5>${d.data.name}</h5>
-                <p> ${d.data.title}</p>
-                {% comment %} <p>Location: ${d.data.office_location}</p>  {% endcomment %}
-                
-            </div>
-        `);
+        // Links between nodes
+        svg.selectAll(".link")
+            .data(root.links())
+            .enter().append("path")
+            .attr("class", "link")
+            .attr("d", d3.linkVertical()
+                .x(d => d.x)
+                .y(d => d.y))
+            .attr("stroke", "#ccc")
+            .attr("stroke-width", 2)
+            .attr("fill", "none");
+
+        // Add nodes as groups
+        const node = svg.selectAll(".node")
+            .data(root.descendants())
+            .enter().append("g")
+            .attr("class", "node")
+            .attr("transform", d => `translate(${d.x},${d.y})`);
+
+        // Add employee cards
+        node.append("foreignObject")
+            .attr("width", 180)
+            .attr("height", 240)
+            .attr("x", -90)
+            .attr("y", 10)
+            .append("xhtml:div")
+            .html(d => `
+                <div class="card" onclick="redirectToEmployeeDetail(${d.data.id})">
+                    <img src="${d.data.image}" alt="${d.data.name}" >
+                    <h5>${d.data.name}</h5>
+                    <p>${d.data.title}</p>
+                </div>
+            `);
+    });
 }
 
 // Initial chart rendering
 renderOrgChart(filteredData);
 
-// Function to filter and reload the chart based on department
+
 function reloadChart(department) {
     if (department === "all") {
         filteredData = originalData;
     } else {
-        // Filter nodes recursively by department
         function filterByDepartment(node) {
             if (node.department === department) {
                 return true;
@@ -160,10 +165,13 @@ function reloadChart(department) {
             return false;
         }
 
-        filteredData = originalData.filter(filterByDepartment);
+        filteredData = originalData.map(tree => {
+            const newTree = { ...tree };
+            newTree.children = newTree.children.filter(filterByDepartment);
+            return newTree;
+        });
     }
 
-    // Render the updated chart
     renderOrgChart(filteredData);
 }
 

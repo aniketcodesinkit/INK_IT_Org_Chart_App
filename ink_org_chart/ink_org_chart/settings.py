@@ -25,8 +25,9 @@ STATIC_URL = '/static/'
 
 # STATICFILES_DIRS is for development: specify directories where static files are located
 STATICFILES_DIRS = [
-    BASE_DIR / "static",  # Where your development static files are located
+    BASE_DIR / "ink_org_chart_app" / "static",
 ]
+
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/5.1/howto/deployment/checklist/
@@ -35,9 +36,9 @@ STATICFILES_DIRS = [
 SECRET_KEY = 'django-insecure-m-j8$siv&kd83ea5rle9bdo1gvg4gqtue$67^1n@jmlo)b-$r9'
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = False
+DEBUG = True
 
-ALLOWED_HOSTS = ['67.219.98.74']
+ALLOWED_HOSTS = ['67.219.98.74', '127.0.0.1', 'localhost']
 
 
 # Application definition
@@ -51,6 +52,7 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'ink_org_chart_app',
     'rest_framework',
+    'rest_framework.authtoken',
     'rest_framework_simplejwt',
     'drf_yasg',
     
@@ -167,12 +169,11 @@ REST_FRAMEWORK = {
 }
 
 SIMPLE_JWT = {
-    'ACCESS_TOKEN_LIFETIME': timedelta(minutes=15),
-    'REFRESH_TOKEN_LIFETIME': timedelta(days=1),
+    'ACCESS_TOKEN_LIFETIME': timedelta(hours=1),  # Increase as needed
+    'REFRESH_TOKEN_LIFETIME': timedelta(days=7),
     'ROTATE_REFRESH_TOKENS': True,
     'BLACKLIST_AFTER_ROTATION': True,
     'ALGORITHM': 'HS256',
-    'SIGNING_KEY': SECRET_KEY,
     'AUTH_HEADER_TYPES': ('Bearer',),
 }
 

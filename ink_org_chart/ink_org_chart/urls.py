@@ -34,6 +34,7 @@ schema_view = get_schema_view(
       license=openapi.License(name="INK IT License"),
    ),
    public=True,
+   permission_classes=[permissions.AllowAny], 
 )
 
 # Add security definitions for Bearer token

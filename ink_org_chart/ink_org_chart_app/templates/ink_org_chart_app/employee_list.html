@@ -131,7 +131,7 @@
                     <th>Image</th> <!-- Image column -->
                     <th>Name</th>
                     <th>Designation</th>
-                    <th>Manager</th>
+                    <th>Reports to</th>
                     <th>Office Location</th>
                     <th>Employment Type</th>
                     <th>Actions</th> <!-- Action buttons for Edit/Delete -->
@@ -150,8 +150,10 @@
                     <td>{{ employee.name }}</td>
                     <td>{{ employee.title }}</td>
                     <td>
-                        {% if employee.manager %}
-                            {{ employee.manager.name }}
+                        {% if employee.managers.all %}
+                            {% for manager in employee.managers.all %}
+                                {{ manager.name }}{% if not forloop.last %}, {% endif %}
+                            {% endfor %}
                         {% else %}
                             None
                         {% endif %}

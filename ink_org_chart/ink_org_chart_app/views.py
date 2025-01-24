@@ -15,9 +15,10 @@ import logging
 logger = logging.getLogger(__name__)
 from drf_yasg.utils import swagger_auto_schema
 from drf_yasg import openapi
-from .serializers import UserSerializer, EmployeeSerializer, AddEmployeeSerializer
+from .serializers import EmployeeSerializer, AddEmployeeSerializer, LoginUserSerializer, RegisterUserSerializer
 from rest_framework.schemas import AutoSchema
 from rest_framework_simplejwt.tokens import RefreshToken
+from rest_framework.exceptions import AuthenticationFailed
 from django.utils.timezone import now, timedelta
 from .models import SharedLink
 from django.http import JsonResponse,  HttpResponseForbidden
@@ -83,7 +84,7 @@ def add_employee(request):
         # employee_id = request.POST.get('employee_id')
         name = request.POST.get('name')
         title = request.POST.get('title')
-        manager_id = request.POST.get('manager')
+        manager_ids = request.POST.getlist('managers')  # Get multiple manager IDs
         office_location = request.POST.get('office_location')
         employment_type = request.POST.get('employment_type')
         job_description = request.POST.get('job_description')
@@ -97,14 +98,13 @@ def add_employee(request):
         resume = request.FILES.get('resume')
 
         # Get the manager if selected, otherwise set to None
-        manager = Employee.objects.get(id=manager_id) if manager_id else None
+        manager = Employee.objects.get(id=manager_ids) if manager_ids else None
 
         # Create the employee object
         employee = Employee.objects.create(
             # employee_id = employee_id,
             name=name,
             title=title,
-            manager=manager,
             office_location=office_location,
             employment_type=employment_type,
             image=image,
@@ -113,6 +113,13 @@ def add_employee(request):
             department=department,
             date_of_joining=date_of_joining 
         )
+
+        # Handle multiple managers
+        manager_ids = request.POST.getlist('managers')  # Get list of manager IDs
+        if manager_ids:
+          managers = Employee.objects.filter(id__in=manager_ids)
+          employee.managers.set(managers)  # Assign multiple managers
+
 
         # Handle certifications
         certifications = request.POST.getlist('certifications[]')  # Handle multiple certifications
@@ -136,7 +143,7 @@ def edit_employee(request, pk):
         employee.employee_id = request.POST.get('employee_id')
         employee.name = request.POST.get('name')
         employee.title = request.POST.get('title')
-        manager_id = request.POST.get('manager')
+        manager_ids = request.POST.getlist('managers')  # Get multiple manager IDs
         employee.office_location = request.POST.get('office_location')
         employee.employment_type = request.POST.get('employment_type')
         employee.job_description = request.POST.get('job_description')
@@ -148,11 +155,13 @@ def edit_employee(request, pk):
         if 'cv' in request.FILES:
             employee.cv = request.FILES['cv']
         
-        # Set the manager if provided, otherwise set None
-        if manager_id:
-            employee.manager = Employee.objects.get(id=manager_id)
+    
+         # Update managers
+        manager_ids = request.POST.getlist('managers')  # Get selected manager IDs
+        if manager_ids:
+            employee.managers.set(manager_ids)  # Update multiple managers
         else:
-            employee.manager = None
+            employee.managers.clear()  # Clear all managers if none are selected
 
         employee.save()
 
@@ -192,7 +201,7 @@ def build_hierarchy(employee):
         'title': employee.title,
         'office_location': employee.office_location,
         'employment_type': employee.employment_type,
-        "manager": employee.manager.name if employee.manager else None,
+        "managers": [manager.name for manager in employee.managers.all()],  # List all managers
         'image': employee.image.url if employee.image else '',  # Use image URL if available, otherwise empty
         'children': [build_hierarchy(subordinate) for subordinate in subordinates]  # Recursively fetch subordinates
     }
@@ -308,29 +317,40 @@ def org_chart(request):
     else:
         employees = Employee.objects.filter(department=selected_department)
 
-    # Process data into the hierarchical structure
+    # Process data into a list of dictionaries
     employees_data = []
     for emp in employees:
+        managers = list(emp.managers.values_list('id', flat=True))  # Get manager IDs
         employees_data.append({
             'id': emp.id,
             'name': emp.name,
             'title': emp.title,
-            'manager_id': emp.manager_id,
+            'manager_ids': managers,  # List of manager IDs
             'image': emp.image.url if emp.image and hasattr(emp.image, 'url') else None,
             'department': emp.department,
-            'department': emp.department,
-            "office_location": emp.office_location 
+            'office_location': emp.office_location,
         })
 
     # Build hierarchical JSON data for the org chart
     def build_hierarchy(employee_list, manager_id=None):
+        """
+        Recursively build the org chart hierarchy. Handles multiple managers by 
+        including employees under all their managers.
+        """
         hierarchy = []
         for emp in employee_list:
-            if emp['manager_id'] == manager_id:
+            if manager_id is None:
+                # Top-level employees (no managers)
+                if not emp['manager_ids']:
+                    children = build_hierarchy(employee_list, emp['id'])
+                    hierarchy.append({**emp, 'children': children})
+            elif manager_id in emp['manager_ids']:
+                # Employees under the current manager
                 children = build_hierarchy(employee_list, emp['id'])
                 hierarchy.append({**emp, 'children': children})
         return hierarchy
 
+    # Top-level hierarchy includes employees with no managers
     org_chart_data = build_hierarchy(employees_data)
 
     return render(request, 'ink_org_chart_app/org_chart.html', {
@@ -360,42 +380,54 @@ def public_org_chart_view(request, token):
 # ---------------------------------- Swagger API -----------------------------------------
 
 # Register User API
-class RegisterUserApiView(APIView):
+class RegisterUserView(APIView):
     permission_classes = [AllowAny]
     schema = AutoSchema()
 
     def post(self, request):
-        serializer = UserSerializer(data=request.data)
+        serializer = RegisterUserSerializer(data=request.data)
         if serializer.is_valid():
-            username = serializer.validated_data['username']
-            password = serializer.validated_data['password']
-            if User.objects.filter(username=username).exists():
-                return Response({'error': 'User already exists. Please login.'}, status=status.HTTP_400_BAD_REQUEST)
-            user = User.objects.create_user(username=username, password=password)
-            return Response({'success': 'Account created successfully'}, status=status.HTTP_201_CREATED)
+            serializer.save()
+            return Response({'message': 'Account created successfully. Please login.'}, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 # Login User API
-class LoginUserApiView(APIView):
+class LoginUserView(APIView):
     permission_classes = [AllowAny]
     schema = AutoSchema()
 
     def post(self, request):
-        serializer = UserSerializer(data=request.data)
+        serializer = LoginUserSerializer(data=request.data)
         if serializer.is_valid():
             username = serializer.validated_data['username']
             password = serializer.validated_data['password']
-            user = authenticate(request, username=username, password=password)
-            if user:
-                # Generate refresh and access tokens
-                refresh = RefreshToken.for_user(user)
-                access_token = refresh.access_token
-                return Response({
-                    'refresh': str(refresh),
-                    'access': str(refresh.access_token),
-                }, status=status.HTTP_200_OK)
-            return Response({'error': 'Invalid username or password'}, status=status.HTTP_400_BAD_REQUEST)
+            user = authenticate(username=username, password=password)
+
+            if user is None:
+                raise AuthenticationFailed('Invalid username or password.')
+
+            # Generate JWT tokens
+            refresh = RefreshToken.for_user(user)
+
+            return Response({
+                'refresh': str(refresh),
+                'access': str(refresh.access_token),
+            }, status=status.HTTP_200_OK)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    
+
+
+# Logout User API  
+class LogoutUserView(APIView):
+    def post(self, request):
+        try:
+            refresh_token = request.data.get('refresh')
+            token = RefreshToken(refresh_token)
+            token.blacklist()  # Blacklist the token to log the user out
+        except Exception as e:
+            return Response({'error': 'Invalid token or logout failed.'}, status=status.HTTP_400_BAD_REQUEST)
+
+        return Response({'message': 'Logged out successfully.'}, status=status.HTTP_200_OK)
 
 # Employee List API
 class EmployeeListApiView(APIView):
@@ -414,19 +446,7 @@ class EmployeeListApiView(APIView):
         serializer = EmployeeSerializer(employees, many=True)
         return Response(serializer.data)
     
-# Logout User API
-class LogoutUserApiView(APIView):
-    permission_classes = [IsAuthenticated]
-    schema = AutoSchema()
 
-    def post(self, request):
-        try:
-            refresh_token = request.data["refresh"]
-            token = RefreshToken(refresh_token)
-            token.blacklist()  # Blacklist the refresh token
-            return Response({"info": "Logged out successfully"}, status=status.HTTP_205_RESET_CONTENT)
-        except Exception as e:
-            return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
 
 # Add Employee API

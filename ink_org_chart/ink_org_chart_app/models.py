@@ -20,12 +20,11 @@ class Employee(models.Model):
     # employee_id = models.CharField(max_length=20, unique=True)
     name = models.CharField(max_length=100)
     title = models.CharField(max_length=100)
-    manager = models.ForeignKey(
-        'self', 
-        null=True, 
-        blank=True, 
-        on_delete=models.SET_NULL, 
-        related_name='subordinates'
+    managers = models.ManyToManyField(
+        'self',
+        blank=True,
+        related_name='subordinates',
+        symmetrical=False
     )
     office_location = models.CharField(max_length=100)
     employment_type = models.CharField(
@@ -35,8 +34,6 @@ class Employee(models.Model):
     )
     image = models.ImageField(upload_to='employee_images/', null=True, blank=True)
     date_of_joining = models.DateField(null=True, blank=True)
-
-    # certifications = models.TextField(null=True, blank=True)
     job_description = models.TextField(null=True, blank=True)
     resume = models.FileField(upload_to='employee_resumes/', null=True, blank=True)
     department = models.CharField(max_length=100, null=True, blank=True)

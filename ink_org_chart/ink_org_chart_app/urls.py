@@ -3,7 +3,7 @@ from django.urls import path
 from django.shortcuts import redirect
 from . import views
 from .views import (
-    RegisterUserApiView, LoginUserApiView, LogoutUserApiView, 
+    RegisterUserView, LoginUserView, LogoutUserView, 
     EmployeeListApiView, AddEmployeeApiView, EditEmployeeApiView, 
     DeleteEmployeeApiView, OrgChartApiView, GenerateShareableLink, public_org_chart_view
 )
@@ -32,9 +32,9 @@ urlpatterns = [
     path('get_project_employees/<int:project_id>/', views.get_project_employees, name='get_project_employees'),
     path('create_project/', views.create_project, name='create_project'),
     path('org_chart/', views.org_chart, name='org_chart'),
-    path('api/register/', RegisterUserApiView.as_view(), name='api-register'),
-    path('api/login/', LoginUserApiView.as_view(), name='api-login'),
-    path('api/logout/', LogoutUserApiView.as_view(), name='api-logout'),
+    path('api/register/', RegisterUserView.as_view(), name='api-register'),
+    path('api/login/', LoginUserView.as_view(), name='api-login'),
+    path('api/logout/', LogoutUserView.as_view(), name='api-logout'),
     path('api/employee_list/', EmployeeListApiView.as_view(), name='api-employee-list'),
     path('api/add_employee/', AddEmployeeApiView.as_view(), name='api-add-employee'),
     path('api/edit_employee/<int:pk>/', EditEmployeeApiView.as_view(), name='api-edit-employee'),
