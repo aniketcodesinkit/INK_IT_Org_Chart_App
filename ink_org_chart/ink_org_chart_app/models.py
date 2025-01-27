@@ -17,7 +17,7 @@ class Employee(models.Model):
         ('Intern', 'Intern'),
     ]
 
-    # employee_id = models.CharField(max_length=20, unique=True)
+    # employee_id = models.CharField(max_length=20, default="TEMP_ID", null=True)
     name = models.CharField(max_length=100)
     title = models.CharField(max_length=100)
     managers = models.ManyToManyField(

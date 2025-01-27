@@ -1,6 +1,8 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from .models import Employee, Project
-
+import pandas as pd
+from django.core.files import File
+import os
 from .models import Certification
 from django.contrib.auth.models import User
 from django.contrib.auth import authenticate, login, logout
@@ -185,6 +187,97 @@ def delete_employee(request, pk):
     employee.delete()
     return redirect('employee_list')
 
+#upload Excel
+def upload_excel(request):
+    if request.method == 'POST':
+        excel_file = request.FILES.get('excel_file')
+        if not excel_file:
+            messages.error(request, "Please upload a valid Excel file.")
+            return redirect('employee_list')
+
+        try:
+            # Read Excel data into a pandas DataFrame
+            df = pd.read_excel(excel_file)
+            if df.empty:
+                messages.error(request, "The uploaded Excel file is empty.")
+                return redirect('employee_list')
+
+            print("DataFrame contents:\n", df)  # Debug: Print DataFrame contents
+
+            # Debug: Check existing data
+            print("Before deletion: ", Employee.objects.count())
+
+            # Clear existing data
+            Employee.objects.all().delete()
+            Certification.objects.all().delete()
+
+            # Debug: Confirm data deletion
+            print("After deletion: ", Employee.objects.count())
+
+            # Loop through the rows to add employees
+            for index, row in df.iterrows():
+                name = row.get('Name', None)
+                title = row.get('Title', None)
+
+                # Validate required fields
+                if pd.isna(name) or pd.isna(title):
+                    print(f"Skipping row {index}: Missing required fields (Name or Title).")
+                    continue  # Skip rows with missing required fields
+
+                # Convert 'NaT' to None for the 'Date of Joining' field
+                date_of_joining = row.get('Date of Joining', None)
+                if pd.isna(date_of_joining):  # Handle NaT or NaN
+                    date_of_joining = None
+
+                # Create the employee
+                employee = Employee.objects.create(
+                    name=name.strip() if isinstance(name, str) else name,
+                    title=title.strip() if isinstance(title, str) else title,
+                    office_location=row.get('Office Location', ''),
+                    employment_type=row.get('Employment Type', ''),
+                    job_description=row.get('Job Description', ''),
+                    department=row.get('Department', ''),
+                    date_of_joining=date_of_joining, 
+                )
+
+                print(f"Added Employee: {employee.name}, {employee.title}")  # Debug: Confirm addition
+
+                # Handle image paths
+                image_path = row.get('Image', None)
+                if image_path and isinstance(image_path, str) and os.path.exists(image_path):
+                    with open(image_path, 'rb') as img_file:
+                        employee.image.save(os.path.basename(image_path), File(img_file))
+
+                # Handle resume paths
+                resume_path = row.get('Resume', None)
+                if resume_path and isinstance(resume_path, str) and os.path.exists(resume_path):
+                    with open(resume_path, 'rb') as resume_file:
+                        employee.resume.save(os.path.basename(resume_path), File(resume_file))
+
+                # Handle managers
+                manager_names = str(row.get('Managers', '')).split(',')
+                if manager_names:
+                    managers = Employee.objects.filter(name__in=[name.strip() for name in manager_names])
+                    employee.managers.set(managers)
+
+                # Handle certifications
+                certifications = str(row.get('Certifications', '')).split(',')
+                for cert in certifications:
+                    if cert.strip():
+                        Certification.objects.create(employee=employee, name=cert.strip())
+
+            # Debug: Confirm final count
+            print("After upload: ", Employee.objects.count())
+
+            messages.success(request, "Employees updated successfully from Excel!")
+        except Exception as e:
+            print("Error:", str(e))  # Debug: Print error message
+            messages.error(request, f"Error processing Excel file: {str(e)}")
+
+        return redirect('employee_list')
+
+    return render(request, 'ink_org_chart_app/employee_list.html')
+ 
 # Employee list view
 def employee_list(request):
     employees = Employee.objects.all()

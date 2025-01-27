@@ -12,6 +12,8 @@
     <script src="https://d3js.org/d3.v7.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.9.3/html2pdf.bundle.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/0.4.1/html2canvas.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
    
     
 </head>
@@ -30,7 +32,11 @@
                             <button onclick="copyShareLink()" class="share-button">Share Link</button>
                         </li>
                         <li class="nav-item ms-3">
-                            <button id="download-btn" class="share-button">Download PDF</button>
+                            <button id="download-pdf-btn" class="share-button">Download PDF</button>
+                        </li>
+                        <li class="nav-item ms-3">
+                            <button id="download-png-btn" class="share-button">Download PNG</button>
+
                         </li>
                         <li class="nav-item ms-3">
                             <button href="{% url 'logout' %}" class="share-button">Logout</button>
@@ -151,40 +157,53 @@ renderOrgChart(filteredData);
 
 
 function reloadChart(department) {
+    // If "all" is selected, reset to the full dataset
     if (department === "all") {
-        filteredData = originalData;
+        filteredData = JSON.parse(JSON.stringify(originalData)); // Deep copy to avoid mutations
     } else {
+        // Recursive function to filter nodes by department
         function filterByDepartment(node) {
+            // Exclude nodes with no department or a blank department
+            if (!node.department || node.department.trim() === "") {
+                return false;
+            }
+
+            // Keep the node if it belongs to the selected department
             if (node.department === department) {
                 return true;
             }
+
+            // Check the children recursively
             if (node.children) {
                 node.children = node.children.filter(filterByDepartment);
-                return node.children.length > 0;
+                return node.children.length > 0; // Keep the node if it has any matching children
             }
+
+            // Exclude the node if it doesn't match
             return false;
         }
 
-        filteredData = originalData.map(tree => {
+        // Apply the filtering logic to the original dataset
+        filteredData = JSON.parse(JSON.stringify(originalData)).map(tree => {
             const newTree = { ...tree };
-            newTree.children = newTree.children.filter(filterByDepartment);
+            newTree.children = newTree.children ? newTree.children.filter(filterByDepartment) : [];
             return newTree;
+        }).filter(tree => {
+            // Keep the tree if it matches the department or has matching children
+            return tree.children.length > 0 || tree.department === department;
         });
     }
 
+    // Re-render the org chart with the updated data
     renderOrgChart(filteredData);
 }
 
-// Handle department filter change
+// Attach to department filter change
 document.getElementById("department-filter").addEventListener("change", function () {
     const selectedDepartment = this.value;
     reloadChart(selectedDepartment);
 });
 
-// Redirect to employee detail page
-function redirectToEmployeeDetail(employeeId) {
-    window.location.href = `/employee/${employeeId}/details/`;
-}
 
 // Update chart based on department selection
 function updateChart() {
@@ -230,42 +249,54 @@ function copyShareLink() {
             function redirectToEmployeeDetail(id) {
                 window.location.href = `/employee/${id}`;
             }
+    
+           
             
-            function downloadOrgChartAsPDF() {
+            // Function to download the chart as PNG
+            function downloadOrgChartAsPNG() {
                 const element = document.getElementById("chart"); // chart container
             
-                //small delay to ensure the chart is fully rendered
-                setTimeout(() => {
-                    const options = {
-                        margin: 0.5, // Margins 
-                        filename: 'org_chart.pdf', 
-                        image: { type: 'jpeg', quality: 0.98 }, 
-                        html2canvas: {
-                            scale: 2, // Higher scale for better quality
-                            useCORS: true, // Enable CORS for cross-origin images
-                            logging: true // Enable logs for debugging
-                        },
-                        jsPDF: { unit: 'in', format: 'letter', orientation: 'landscape' } // PDF options
-                    };
-            
-                    // hide unnecessary elements (like the download button)
-                    const downloadBtn = document.getElementById("download-btn");
-                    downloadBtn.style.display = 'none';
-        
-                    html2pdf()
-                        .set(options)
-                        .from(element)  // element to convert to PDF
-                        .save()         // Save the PDF
-                        .then(() => {
-                            // Restoring hidden elements after download
-                            downloadBtn.style.display = 'block';
-                        });
-                }, 500); // Delay to ensure rendering is complete
+                 // Use html2canvas to capture the content of the chart container
+                html2canvas(element, { 
+                    useCORS: true, // Allow cross-origin images
+                    scale: 10, // High resolution
+                    logging: true, // Optional: for debugging
+                    windowWidth: document.body.scrollWidth, // Capture full chart width
+                    windowHeight: document.body.scrollHeight, // Capture full chart height
+                }).then(function (canvas) {
+                    // Convert the canvas to a PNG data URL
+                    const pngDataUrl = canvas.toDataURL('image/png');
+             
+                    // Create a link element to trigger the download
+                    const link = document.createElement('a');
+                    link.href = pngDataUrl;
+                    link.download = 'org_chart.png'; // Set the desired file name
+                    link.click(); // Trigger the download
+                });
             }
+
+            // Attach the function to the download button
+           document.getElementById("download-png-btn").addEventListener("click", downloadOrgChartAsPNG);
+
+            // Function to download the chart as PDF
+            function downloadOrgChartAsPDF() {
+                downloadOrgChartAsPNG(function (pngDataUrl) {
+                    const pdf = new jsPDF('landscape'); // Create a landscape PDF
+                    const imgWidth = pdf.internal.pageSize.getWidth(); // PDF width
+                    const imgHeight = pdf.internal.pageSize.getHeight(); // PDF height
             
-            document.getElementById("download-btn").addEventListener("click", downloadOrgChartAsPDF);
+                    // Add the PNG image to the PDF
+                    pdf.addImage(pngDataUrl, 'PNG', 0, 0, imgWidth, imgHeight);
             
-            
+                    // Save the PDF
+                    pdf.save('org_chart.pdf');
+                });
+            }
+
+            document.getElementById("download-pdf-btn").addEventListener("click", downloadOrgChartAsPDF);
+
+           
+
 
     </script>
 

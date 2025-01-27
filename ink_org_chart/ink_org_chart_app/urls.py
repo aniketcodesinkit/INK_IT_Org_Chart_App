@@ -22,6 +22,7 @@ urlpatterns = [
     path('add/', views.add_employee, name='add_employee'),
     path('list/', views.employee_list, name='employee_list'),
     path('edit/<int:pk>/', views.edit_employee, name='edit_employee'),
+    path('upload_excel/', views.upload_excel, name='upload_excel'),
     path('delete/<int:pk>/', views.delete_employee, name='delete_employee'),
     path('employee/<int:pk>/', views.employee_detail, name='employee_detail'),
     path('project_list/', views.project_list, name='project_list'),  # List all projects
