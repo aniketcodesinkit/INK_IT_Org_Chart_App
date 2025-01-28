@@ -83,8 +83,8 @@
 
         // Set up dimensions and margins of the diagram
         const margin = { top: 30, right: 90, bottom: 30, left: 90 };
-        const width = window.innerWidth - margin.left - margin.right;
-        const height = window.innerHeight - margin.top - margin.bottom;
+        const width = 8000 - margin.left - margin.right;
+        const height = 1000 - margin.top - margin.bottom;
 
         function renderOrgChart(data) {
             // Clear the chart container
@@ -95,12 +95,12 @@
                 .attr("width", "100%")
                 .attr("height", "100vh")
                 .attr("viewBox", `0 0 ${width + margin.left + margin.right} ${height + margin.top + margin.bottom}`)
-                .attr("preserveAspectRatio", "xMidYMid meet")
+                //  .attr("preserveAspectRatio", "xMidYMid meet")
                 .call(d3.zoom().on("zoom", (event) => {
                     svg.attr("transform", event.transform);
                 }))
                 .append("g")
-                .attr("transform", `translate(${margin.left},${margin.top}) scale(0.5)`);
+                .attr("transform", `translate(${margin.left},${margin.top}) `);
 
             function processHierarchy(node) {
                 const children = node.children || [];
@@ -116,7 +116,7 @@
                 const root = d3.hierarchy(treeData);
 
                 // Create a tree layout with node spacing
-                const treeLayout = d3.tree().nodeSize([600, 400]);
+                const treeLayout = d3.tree().size([width, height]);
                 treeLayout(root);
 
                 // Create links (lines between nodes)
@@ -147,7 +147,7 @@
                     .append("xhtml:div")
                     .html(d => `
                 <div style="
-                    width: 260px;
+                    width: 220px;
                     height: 220px;
                     border-radius: 10px;
                     background: #eaeaea !important;
