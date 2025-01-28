@@ -116,7 +116,7 @@
                 const root = d3.hierarchy(treeData);
 
                 // Create a tree layout with node spacing
-                const treeLayout = d3.tree().size([width, height]);
+                const treeLayout = d3.tree().size([width, height]); 
                 treeLayout(root);
 
                 // Create links (lines between nodes)
